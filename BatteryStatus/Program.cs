@@ -22,62 +22,70 @@ namespace IngameScript
 {
     partial class Program : MyGridProgram
     {
-        // This file contains your actual script.
-        //
-        // You can either keep all your code here, or you can create separate
-        // code files to make your program easier to navigate while coding.
-        //
-        // In order to add a new utility class, right-click on your project, 
-        // select 'New' then 'Add Item...'. Now find the 'Space Engineers'
-        // category under 'Visual C# Items' on the left hand side, and select
-        // 'Utility Class' in the main area. Name it in the box below, and
-        // press OK. This utility class will be merged in with your code when
-        // deploying your final script.
-        //
-        // You can also simply create a new utility class manually, you don't
-        // have to use the template if you don't want to. Just do so the first
-        // time to see what a utility class looks like.
-        // 
-        // Go to:
-        // https://github.com/malware-dev/MDK-SE/wiki/Quick-Introduction-to-Space-Engineers-Ingame-Scripts
-        //
-        // to learn more about ingame scripts.
+         //All inside "Script" goes inside Programmable Block
+        /*-------------------------------------------Script------------------------------------------------*/
+        List<IMyBatteryBlock> batteries = new List<IMyBatteryBlock>();
+        List<IMyTextPanel> textPanels = new List<IMyTextPanel>();
+
+        string Mode = "";
+        double Stored = 0;
+        double Input = 0;
+        double Output = 0;
 
         public Program()
         {
-            // The constructor, called only once every session and
-            // always before any other method is called. Use it to
-            // initialize your script. 
-            //     
-            // The constructor is optional and can be removed if not
-            // needed.
-            // 
-            // It's recommended to set Runtime.UpdateFrequency 
-            // here, which will allow your script to run itself without a 
-            // timer block.
+
+            //Set update frequency for script
+            Runtime.UpdateFrequency = UpdateFrequency.Update100;
         }
 
-        public void Save()
-        {
-            // Called when the program needs to save its state. Use
-            // this method to save your state to the Storage field
-            // or some other means. 
-            // 
-            // This method is optional and can be removed if not
-            // needed.
-        }
+
 
         public void Main(string argument, UpdateType updateSource)
         {
-            // The main entry point of the script, invoked every time
-            // one of the programmable block's Run actions are invoked,
-            // or the script updates itself. The updateSource argument
-            // describes where the update came from. Be aware that the
-            // updateSource is a  bitfield  and might contain more than 
-            // one update type.
-            // 
-            // The method itself is required, but the arguments above
-            // can be removed if not needed.
+
+            //Get BatteryBlocks on same grid as PB
+            GridTerminalSystem.GetBlocksOfType<IMyBatteryBlock>(batteries, b => b.ToString().ToLower().Contains("basebattery"));
+            //Get LCD-panels on same grid as PB                                                                     ^ ^ ^ 
+            GridTerminalSystem.GetBlocksOfType<IMyTextPanel>(textPanels, b => b.ToString().ToLower().Contains("basebattery"));
+            //These will find the batteries and panels on the current grid containing any string matching these   ^ ^ ^
+
+            Stored = 0;
+            //Get battery status
+            for (int i = 0; i < batteries.Count; i++)
+            {
+                Mode = batteries[i].ChargeMode.ToString();
+                Stored += Math.Floor(batteries[i].CurrentStoredPower);
+                Input = Math.Floor(batteries[i].CurrentInput * 1000);
+                Output = Math.Floor(batteries[i].CurrentOutput * 1000);
+            }
+
+
+            //Write to TextPanels
+            for (int i = 0; i < textPanels.Count; i++)
+            {
+                textPanels[i].WriteText("Batteries Found: " + batteries.Count + "\n");
+                textPanels[i].WriteText("Mode: " + Mode + "\n", true);
+
+                if (Stored > 1)
+                {
+                    textPanels[i].WriteText("Stored Power: " + Stored + " MW\n", true);
+                } 
+                else { textPanels[i].WriteText("Stored Power: " + Stored + " kW\n", true); }
+
+                if (Input > 1000)
+                {
+                    textPanels[i].WriteText("Input: " + Input + " MW\n", true);
+                }
+                else { textPanels[i].WriteText("Input: " + Input + " kW\n", true); }
+
+                if (Output > 1000)
+                {
+                    textPanels[i].WriteText("Output: " + Output + " MW\n", true);
+                }else { textPanels[i].WriteText("Output: " + Output + " kW\n", true); }
+                
+            }
         }
+        /*-------------------------------------------Script------------------------------------------------*/
     }
 }
